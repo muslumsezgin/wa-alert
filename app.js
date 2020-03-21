@@ -9,7 +9,7 @@ const logger = require('./utils/logger');
 const logUtil = require("util");
 
 //TODO env
-dotenv.config({ path: __dirname + "/.env.local" });
+dotenv.config({ path: __dirname + "/.env" });
 
 const app = express();
 
