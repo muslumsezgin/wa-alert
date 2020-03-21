@@ -1,0 +1,30 @@
+{
+  "name": "adc-wa-alert",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www",
+    "dev": "NODE_TLS_REJECT_UNAUTHORIZED=\"0\" nodemon ./bin/www"
+  },
+  "dependencies": {
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "dotenv": "^8.2.0",
+    "express": "~4.16.1",
+    "markdown-it": "^10.0.0",
+    "markdown-it-container": "^2.0.0",
+    "markdown-it-footnote": "^3.0.2",
+    "markdown-it-github-headings": "^2.0.0",
+    "markdown-it-highlightjs": "^3.1.0",
+    "markdown-it-sub": "^1.0.0",
+    "markdown-it-table-of-contents": "^0.4.4",
+    "morgan": "~1.9.1",
+    "node-fetch": "^2.6.0",
+    "swagger-jsdoc": "^3.5.0",
+    "swagger-ui-express": "^4.1.3",
+    "winston": "^3.2.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.2"
+  }
+}
