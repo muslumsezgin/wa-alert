@@ -1,28 +1,27 @@
-const request = require('../utils/request');
 const WAError = require('../model/WAError');
+const ReturnObject = require('../model/ReturnObject');
+const request = require('../utils/request');
 const logger = require('../utils/logger');
-
-let authToken = '';
+const url = require('../utils/url');
 
 const message_types = ['text', 'image', 'audio', 'video', 'document', 'location'];
 const recipient_types = ['individual', 'group'];
 
-exports.sendMessage = (req, res, next) => {
+exports.sendMessage = async (req, res, next) => {
     try {
         const body = req.body;
         checkArgs(body);
         const json = formatter(body);
-        post(json);
-        res.send(json);
+        const payload = await send(json);
+        res.status(201).json(new ReturnObject({payload}))
     } catch (e) {
         logger.error(logger.json(e));
         if (e instanceof WAError) {
-            res.status(400).send(e)
+            res.status(400).json(new ReturnObject(e))
         } else {
-            res.status(404).send(new WAError())
+            res.status(404).json(new ReturnObject())
         }
     }
-
 };
 
 function checkArgs(body) {
@@ -30,17 +29,17 @@ function checkArgs(body) {
         /**
          * require parameters check
          */
-        !!(body.to && body.type && body.recipient_type && body.content)
+        !(body.to && body.message_type && body.recipient_type && body.content)
         /**
          * message_type type check
          */
-        && !!(message_types.find(t => t === body.type))
+        || !(message_types.find(t => t === body.message_type))
         /**
          * recipient type check
          */
-        && !!(recipient_types.find(r => r === body.recipient_type))
+        || !(recipient_types.find(r => r === body.recipient_type))
     )
-        throw new WAError("Parameter value is not valid");
+        throw new WAError(103, 'Parameter value is not valid');
 }
 
 function formatter(body) {
@@ -57,8 +56,19 @@ function formatter(body) {
                 body: body.content
             };
             object['preview_url'] = body.preview_url;
+            if (body.recipient_type === 'group') {
+                object['render_mentions'] = true
+            }
             break;
         case 'image':
+            object[message_type] = {
+                link: body.content,
+                caption: body.caption
+            };
+            if (body.recipient_type === 'group') {
+                object['render_mentions'] = true
+            }
+            break;
         case 'video':
             object[message_type] = {
                 link: body.content,
@@ -80,7 +90,7 @@ function formatter(body) {
         case 'location':
             const coordinates = body.content.split(',');
             if (coordinates.length !== 2)
-                throw new WAError(101, "Invalid location Info");
+                throw new WAError(101, 'Invalid location Info');
             object[message_type] = {
                 longitude: coordinates[0],
                 latitude: coordinates[1],
@@ -92,33 +102,23 @@ function formatter(body) {
     return object;
 }
 
-async function post(data) {
+async function send(data) {
+    let error = null;
     let result = {};
-    await request.POST(process.env.WA_MESSAGE_URL, {'Authorization': 'Bearer ' + authToken}, data, {
-        '200': (res) => {
-            result = res;
-        },
-        '401': (res) => {
-            token(data)
+    await request.POST(url.messages(), null, data, {
+        '201': (res) => {
+            result = res.messages[0];
         },
         otherwise: (res) => {
+            if (res.errors)
+                error = new WAError(111, res.errors[0].details);
+            else
+                error = new WAError(105, 'WhatsApp invalid response!')
         },
         fail: (err) => {
+            error = new WAError()
         }
     });
-}
-
-function token(data) {
-    request.POST(process.env.WA_LOGIN_URL, {'Authorization': 'Basic ' + process.env.WA_USER}, null, {
-        '200': (res) => {
-            authToken = res.users[0].token;
-            post(data)
-        },
-        otherwise: (res) => {
-
-        },
-        fail: (err) => {
-
-        }
-    });
+    if (error) throw error;
+    return result;
 }

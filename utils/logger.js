@@ -1,5 +1,5 @@
 const {createLogger, transports, format} = require('winston');
-const logUtil = require("util");
+const logUtil = require('util');
 
 const logger = createLogger({
     format: format.combine(
@@ -10,8 +10,8 @@ const logger = createLogger({
         new transports.File({
             filename: './logs/application.log',
             json: false,
-            maxsize: 100 * 1024,
-            maxFiles: 100,
+            maxsize: 100 * 1024 * 1024,
+            maxFiles: 10,
         })
     ]
 });
@@ -34,11 +34,21 @@ const reqResLogger = function (req, res) {
     } catch (e) {
         //not json
     }
-    const result = '\nRequest: ' + logger.json(req.body) + '\nResponse: ' + logger.json(res.bodyDetail);
+    const result = '\nHeaders: ' + logger.json(req.headers) + '\nRequest: ' + logger.json(req.body) + '\nResponse: ' + logger.json(res.bodyDetail);
     res.bodyDetail = null;
     return result
+};
+
+const resBodyDetail = function (req, res, next) {
+    let send = res.send;
+    res.send = function (string) {
+        res.bodyDetail = string;
+        send.call(this, string);
+    };
+    next();
 };
 
 module.exports = logger;
 module.exports.json = jsonFormatter;
 module.exports.reqResLogger = reqResLogger;
+module.exports.resBodyDetail = resBodyDetail;
