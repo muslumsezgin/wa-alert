@@ -9,7 +9,7 @@ const logger = require('./utils/logger');
 const fileUpload = require('express-fileupload');
 const WAError = require('./model/WAError');
 
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV === 'dev') {
     dotenv.config({path: __dirname + '/.env.local'});
 } else {
     dotenv.config({path: __dirname + '/.env'});
